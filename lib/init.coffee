@@ -3,39 +3,85 @@ path = require 'path'
 
 lint = (editor) ->
   helpers = require('atom-linter')
-  regex = /((?:[A-Z]:)?[^:]+):([^:]+):(.+)/
   file = editor.getPath()
   dirname = path.dirname(file)
-  
-  args = ("#{arg}" for arg in atom.config.get('linter-verilog.extraOptions'))
-  args = args.concat ['-t', 'null', '-I', dirname,  file]
-  helpers.exec('iverilog', args, {stream: 'both'}).then (output) ->
-    lines = output.stderr.split("\n")
-    messages = []
-    for line in lines
-      if line.length == 0
-        continue;
+  simulator = atom.config.get('linter-verilog.simulator')
+  extra_args = atom.config.get('linter-verilog.extraOptions')
+  args = ("#{arg}" for arg in extra_args)
+  messages = []
 
-      console.log(line)
-      parts = line.match(regex)
-      if !parts || parts.length != 4
-        console.debug("Droping line:", line)
-      else
-        message =
-          filePath: parts[1].trim()
-          range: helpers.rangeFromLineNumber(editor, parseInt(parts[2])-1, 0)
-          type: 'Error'
-          text: parts[3].trim()
+  if simulator == 'verilator'
+     regex = /%([^:]+):([^:]+):([^:]+):(.+)/
+     args = args.concat ['-Wall', '--lint-only', '-I'+dirname, file]
 
-        messages.push(message)
+     helpers.exec('verilator', args, {stream: 'both'}).then (output) ->
+       lines = output.stderr.split("\n")
+       
+       for line in lines
+         if line.length == 0
+           continue;
 
-    return messages
+         console.log(line)
+         parts = line.match(regex)
+
+         if !parts || parts.length != 5
+           console.debug("Droping line:", line)
+         else
+           message_type = ''
+           if (/error/i.test(parts[1]))
+              message_type = 'Error'
+           else if (/warning/i.test(parts[1]))
+              message_type = 'Warning'
+           else
+              message_type = parts[1]
+
+           message =
+             filePath: parts[2].trim()
+             range: helpers.rangeFromLineNumber(editor, parseInt(parts[3])-1, 0)
+             type : message_type
+             text: parts[4].trim()
+
+           messages.push(message)
+           console.debug(simulator, " message:", message)
+
+       return messages
+  else
+     regex = /((?:[A-Z]:)?[^:]+):([^:]+):(.+)/
+     args = args.concat ['-t', 'null', '-I', dirname,  file]
+
+     helpers.exec('iverilog', args, {stream: 'both'}).then (output) ->
+       lines = output.stderr.split("\n")
+
+       for line in lines
+         if line.length == 0
+           continue;
+
+         console.log(line)
+         parts = line.match(regex)
+
+         if !parts || parts.length != 4
+           console.debug("Droping line:", line)
+         else
+           message =
+             filePath: parts[1].trim()
+             range: helpers.rangeFromLineNumber(editor, parseInt(parts[2])-1, 0)
+             type: 'Error'
+             text: parts[3].trim()
+
+           messages.push(message)
+           console.debug(simulator, " message:", message)
+
+       return messages
 
 module.exports =
   config:
+    simulator:
+      type: 'string'
+      default:'verilator'
+      enum: ['verilator', 'iverilog']
     extraOptions:
       type: 'array'
-      default: []
+      default: ['--default-language','1800-2012']
       description: 'Comma separated list of iverilog options'
   activate: ->
     require('atom-package-deps').install('linter-verilog')
