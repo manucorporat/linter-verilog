@@ -81,7 +81,7 @@ module.exports =
       enum: ['verilator', 'iverilog']
     extraOptions:
       type: 'array'
-      default: ['--default-language','1800-2012']
+      default: []
       description: 'Comma separated list of iverilog options'
   activate: ->
     require('atom-package-deps').install('linter-verilog')
