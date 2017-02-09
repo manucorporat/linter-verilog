@@ -1,4 +1,4 @@
-#linter-verilog
+# linter-verilog
 
 Atom linter for Verilog and SystemVerilog using [Verilaror](http://www.veripool.org/wiki/verilator).
 
@@ -7,7 +7,7 @@ There is also an option use [Icarus Verilog](http://iverilog.icarus.com) which o
 ![Screenshot](https://raw.githubusercontent.com/manucorporat/linter-verilog/master/screenshot.png)
 
 
-#Installation
+# Installation
 
 1. Install one of the supported simulators
 
@@ -25,7 +25,7 @@ On MacOs, they should be available using **`brew`**.
 If you are writing SystemVerilog, you will have to install **Verilator** as iverilog does not support recent Verilog Syntax.
 
 
-2. Install the atom package:  
+2. Install the atom package: 
 
 From the `Install` pane of the `Settings` menu or through the command line:
 
